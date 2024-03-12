@@ -13,6 +13,7 @@ namespace GameOfLife.ECS
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new GridSizeSingleton(){size = authoring.GridSize});
+                AddComponent<GlobalSingletonTag>(entity);
                 var e2 = CreateAdditionalEntity(TransformUsageFlags.None);
                 AddComponent<RecalculateConnectionCommand>(e2);
             }

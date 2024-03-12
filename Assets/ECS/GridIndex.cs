@@ -4,6 +4,6 @@ namespace GameOfLife.ECS
 {
     public struct GridIndex : IComponentData
     {
-        public ulong index;
+        public int index;
     }
 }

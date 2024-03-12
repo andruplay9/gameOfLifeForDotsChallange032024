@@ -10,6 +10,7 @@ namespace GameOfLife
     {
         [SerializeField]
         private ulong testValue = 0b1111111100000011000000000001000000111000000100000000000000000000;
+        private ulong glider = 0b0000000000000000000000000000100000101000000110000000000000000000;
 
         // Start is called before the first frame update
         void Start()

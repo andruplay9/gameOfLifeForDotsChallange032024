@@ -8,7 +8,7 @@ using UnityEngine.Serialization;
 
 namespace GameOfLife.ECS
 {
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
+    [UpdateInGroup(typeof(GameOfLifeSimulationSystemGroupSystem))]
     [UpdateAfter(typeof(CalculateBordersOfChunkSystem))]
     public partial struct CalculateNextGenSystem : ISystem
     {
@@ -22,32 +22,39 @@ namespace GameOfLife.ECS
                     RightBorderOfChunk>()
                 .Build(ref state);
             state.RequireForUpdate(_querry);
+            state.RequireForUpdate<GridSizeSingleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var downborderhashmap = new NativeParallelHashMap<ulong, int>(6, state.WorldUpdateAllocator);
-            var upborderhashmap = new NativeParallelHashMap<ulong, int>(6, state.WorldUpdateAllocator);
-            var leftborderhashmap = new NativeParallelHashMap<ulong, ulong>(6, state.WorldUpdateAllocator);
-            var rightborderhashmap = new NativeParallelHashMap<ulong, ulong>(6, state.WorldUpdateAllocator);
+            var size = SystemAPI.GetSingleton<GridSizeSingleton>().size;
+            var counter = size.x * size.y;
+            var downborderhashmap = new NativeArray<int>(counter, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var upborderhashmap = new NativeArray<int>(counter, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var leftborderhashmap = new NativeArray<ulong>(counter, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var rightborderhashmap = new NativeArray<ulong>(counter, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
             state.Dependency=new GetDataToCalculateNextGen()
             {
-                hashMapDown = downborderhashmap.AsParallelWriter(),
-                hashMapUp = upborderhashmap.AsParallelWriter(),
-                hashMapleft = leftborderhashmap.AsParallelWriter(),
-                hashMapright = rightborderhashmap.AsParallelWriter(),
+                hashMapDown = downborderhashmap,
+                hashMapUp = upborderhashmap,
+                hashMapleft = leftborderhashmap,
+                hashMapright = rightborderhashmap,
             }.ScheduleParallel(state.Dependency);
-            state.Dependency=new CalculateNextGeneretionForChunkJob()
-            {
+            state.Dependency.Complete();
+            //state.Dependency=
+            new CalculateNextGeneretionForChunkJob()
+                {
 
-                hashMapUp = upborderhashmap.AsReadOnly(),
-                hashMapDown = downborderhashmap.AsReadOnly(),
-                hashMapright = rightborderhashmap.AsReadOnly(),
-                hashMapleft = leftborderhashmap.AsReadOnly()
-                
-            }.ScheduleParallel(state.Dependency);
+                    hashMapUp = upborderhashmap.AsReadOnly(),
+                    hashMapDown = downborderhashmap.AsReadOnly(),
+                    hashMapright = rightborderhashmap.AsReadOnly(),
+                    hashMapleft = leftborderhashmap.AsReadOnly()
+
+                }
+                .Run();
+                    //.ScheduleParallel(state.Dependency);
             state.Dependency=downborderhashmap.Dispose(state.Dependency);
             state.Dependency=upborderhashmap.Dispose(state.Dependency);
 
@@ -55,38 +62,38 @@ namespace GameOfLife.ECS
             state.Dependency=rightborderhashmap.Dispose(state.Dependency);
 
         }
+        [BurstCompile]
         private partial struct GetDataToCalculateNextGen:IJobEntity
         {
-            [NativeDisableParallelForRestriction] public NativeParallelHashMap<ulong, int>.ParallelWriter hashMapDown;
-            [NativeDisableParallelForRestriction] public NativeParallelHashMap<ulong, int>.ParallelWriter hashMapUp;
-            [NativeDisableParallelForRestriction] public NativeParallelHashMap<ulong, ulong>.ParallelWriter hashMapleft;
-            [NativeDisableParallelForRestriction] public NativeParallelHashMap<ulong, ulong>.ParallelWriter hashMapright;
+            [NativeDisableParallelForRestriction] public NativeArray<int> hashMapDown;
+            [NativeDisableParallelForRestriction] public NativeArray< int> hashMapUp;
+            [NativeDisableParallelForRestriction] public NativeArray<ulong> hashMapleft;
+            [NativeDisableParallelForRestriction] public NativeArray<ulong> hashMapright;
 
             public void Execute(GridIndex index, DownBorderOfChunk downBorderOfChunk, UpBorderOfChunk upBorderOfChunk, LeftBorderOfChunk leftBorderOfChunk, RightBorderOfChunk rightBorderOfChunk)
             {
-                hashMapDown.TryAdd(index.index, downBorderOfChunk.Value);
-                hashMapUp.TryAdd(index.index, upBorderOfChunk.Value);
-                hashMapleft.TryAdd(index.index, leftBorderOfChunk.Value);
-                hashMapright.TryAdd(index.index, rightBorderOfChunk.Value);
+                hashMapDown[index.index]=downBorderOfChunk.Value;
+                hashMapUp[index.index]=upBorderOfChunk.Value;
+                hashMapleft[index.index]=leftBorderOfChunk.Value;
+                hashMapright[index.index]=rightBorderOfChunk.Value;
             }
         }
-
         private partial struct CalculateNextGeneretionForChunkJob :IJobEntity
         {
-            [ReadOnly] public NativeParallelHashMap<ulong, int>.ReadOnly hashMapUp;
-            [ReadOnly] public NativeParallelHashMap<ulong, int>.ReadOnly hashMapDown;
-            [ReadOnly] public NativeParallelHashMap<ulong, ulong>.ReadOnly hashMapleft;
-            [ReadOnly] public NativeParallelHashMap<ulong, ulong>.ReadOnly hashMapright;
+            [ReadOnly] public NativeArray<int>.ReadOnly hashMapUp;
+            [ReadOnly] public NativeArray<int>.ReadOnly hashMapDown;
+            [ReadOnly] public NativeArray<ulong>.ReadOnly hashMapleft;
+            [ReadOnly] public NativeArray<ulong>.ReadOnly hashMapright;
             
             public void Execute(ref ActualChunkInGridData chunk, in LeftNeighboorChunkInGrid leftNeighboorChunkInGrid,
                 in RightNeighboorChunkInGrid rightNeighboorChunkInGrid, in UpNeighboorChunkInGrid upNeighboorChunkInGrid, 
                 in DownNeighboorChunkInGrid downNeighboorChunkInGrid, in GridIndex index)
             {
                 var upBorderOfDownNeighbor = (ulong)hashMapUp[downNeighboorChunkInGrid.Value];
-                var downBorderOfUpNeighbor =(ulong) hashMapDown[upNeighboorChunkInGrid.Value];
-                var leftBorderRightNeighbor = new NativeBitArray(8, Allocator.Temp);
+                var downBorderOfUpNeighbor =(ulong)hashMapDown[upNeighboorChunkInGrid.Value];
+                var leftBorderRightNeighbor = new NativeBitArray(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 leftBorderRightNeighbor.SetBits(0,hashMapleft[rightNeighboorChunkInGrid.Value],8);
-                var rightBorderLeftNeighbor = new NativeBitArray(8, Allocator.Temp);
+                var rightBorderLeftNeighbor = new NativeBitArray(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 rightBorderLeftNeighbor.SetBits(0,hashMapright[leftNeighboorChunkInGrid.Value],8);
                 var chunkValue = chunk.Value;
                 var leftMoved = chunkValue<< 8;
@@ -114,6 +121,11 @@ namespace GameOfLife.ECS
                 ulong test2Neighbors = (upDown ^ (upShift & leftMoved) ^ (upShift & rightMoved) ^ (downShift & leftMoved)
                                         ^ (downShift & rightMoved) ^ rightLeft) & chunkValue;
                 ulong test3Neighbors = upDown & (leftMoved ^ rightMoved) | rightLeft & (upShift ^ downShift);
+                
+                Debug.Log(index.index+"\n"+TestLogic.SpliceText(test2Neighbors)+"  \n"+TestLogic.SpliceText(test3Neighbors));
+                Debug.Log(downBorderOfUpNeighbor+" "+upBorderOfDownNeighbor);
+                Debug.Log(index.index+"\n"+TestLogic.SpliceText(leftMoved)+"  \n"+TestLogic.SpliceText(rightMoved));
+                Debug.Log(index.index+"\n"+TestLogic.SpliceText(upShift)+"  \n"+TestLogic.SpliceText(downShift));
 
                 chunk.Value = test2Neighbors | test3Neighbors;
 

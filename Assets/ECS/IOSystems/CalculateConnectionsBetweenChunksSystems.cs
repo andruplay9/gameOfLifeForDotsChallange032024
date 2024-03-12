@@ -1,17 +1,18 @@
-﻿using Unity.Burst;
+﻿using GameOfLife.ECS.IOSystems;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace GameOfLife.ECS
+namespace GameOfLife.ECS.IOSystems
 {
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    [UpdateBefore(typeof(CalculateBordersOfChunkSystem))]
+    [UpdateInGroup(typeof(GameOfLifeCrationAndIOSystemGroupSystem))]
+    [UpdateAfter(typeof(LoadBaseGridGivenSizeSystem))]
     public partial struct CalculateConnectionsBetweenChunksSystems : ISystem
     {
-        private EntityQuery _querry, _commandQuerry;
+        private EntityQuery _querry;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -19,34 +20,29 @@ namespace GameOfLife.ECS
                 .WithAll<GridIndex, LeftNeighboorChunkInGrid, RightNeighboorChunkInGrid, UpNeighboorChunkInGrid,
                     DownNeighboorChunkInGrid>()
                 .Build(ref state);
-            _commandQuerry = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<RecalculateConnectionCommand>()
-                .Build(ref state);
             state.RequireForUpdate<GridSizeSingleton>();
-            state.RequireForUpdate(_commandQuerry);
+            state.RequireForUpdate<RecalculateConnectionCommand>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.EntityManager.DestroyEntity(_commandQuerry);
+            state.EntityManager.RemoveComponent<RecalculateConnectionCommand>(SystemAPI.GetSingletonEntity<GlobalSingletonTag>());
             var size = SystemAPI.GetSingleton<GridSizeSingleton>().size;
 
             state.Dependency = new SetNeighboorsReferences()
             {
                 gridSize = size
             }.ScheduleParallel(state.Dependency);
-
         }
-
-
+        
         private partial struct SetNeighboorsReferences : IJobEntity
         {
             [ReadOnly] public int2 gridSize;
             public void Execute(in GridIndex index, ref LeftNeighboorChunkInGrid leftNeighboor, ref RightNeighboorChunkInGrid rightNeighboor,
                 ref UpNeighboorChunkInGrid upNeighboor, ref DownNeighboorChunkInGrid downNeighboor)
             {
-                var gridSizeX = (ulong)gridSize.x;
+                var gridSizeX = gridSize.x;
                 var indexX = index.index % gridSizeX;
                 var indexY = index.index / gridSizeX;
                 if (indexX == 0)
@@ -66,7 +62,7 @@ namespace GameOfLife.ECS
                     rightNeighboor.Value = indexY * gridSizeX + indexX + 1;
                 }
 
-                ulong gridSizeY =  (ulong)gridSize.y;
+                var gridSizeY =  gridSize.y;
                 if (indexY== 0)
                 {
                     upNeighboor.Value = (gridSizeY-1) * gridSizeX + indexX;

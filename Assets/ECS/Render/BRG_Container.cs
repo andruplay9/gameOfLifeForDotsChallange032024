@@ -229,7 +229,7 @@ public unsafe class BRG_Container
                     layer = 0,
                     motionMode = MotionVectorGenerationMode.Camera,
                     shadowCastingMode = m_castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
-                    receiveShadows = true,
+                    receiveShadows = false,
                     staticShadowCaster = false,
                     allDepthSorted = false
                 }

@@ -11,8 +11,8 @@ using Random = UnityEngine.Random;
 
 namespace GameOfLife.ECS.Render
 {
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(CalculateNextGenSystem))]
+    [UpdateInGroup(typeof(GameOfLifeSystemGroupSystem), OrderLast = true)]
+    [UpdateAfter(typeof(GameOfLifeSimulationSystemGroupSystem))]
     public partial class RenderBackgroundViewSystem : SystemBase
     {
         private EntityQuery _querry;
@@ -33,8 +33,6 @@ namespace GameOfLife.ECS.Render
         protected override void OnUpdate()
         {
             var dataEntity = SystemAPI.GetSingleton<GridSizeSingleton>();
-
-            
             var component = SystemAPI.ManagedAPI.GetSingleton<TileMaterialAndMeshComponent>();
             var brgContainer = SystemAPI.ManagedAPI.GetSingleton<BRG_ContainerComponent>().Value;
             var counter = _querry.CalculateEntityCount()*64;
@@ -116,8 +114,8 @@ namespace GameOfLife.ECS.Render
                 for (int j = 0; j < 64; j++)
                 {
                     pos=float3.zero;
-                    pos.x = gridIndex.index % (ulong)gridColumnCount * 8;
-                    pos.z = gridIndex.index / (ulong)gridColumnCount * 8;
+                    pos.x = gridIndex.index % gridColumnCount * 8;
+                    pos.z = gridIndex.index / gridColumnCount * 8;
                     pos.x -= j % 8;
                     pos.z -= j / 8;
                     pos.x += 0.5f;

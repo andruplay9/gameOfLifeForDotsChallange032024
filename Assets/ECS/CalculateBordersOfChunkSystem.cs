@@ -6,8 +6,7 @@ using UnityEngine;
 
 namespace GameOfLife.ECS
 {
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    [UpdateAfter(typeof(CalculateConnectionsBetweenChunksSystems))]
+    [UpdateInGroup(typeof(GameOfLifeSimulationSystemGroupSystem))]
 
     public partial struct CalculateBordersOfChunkSystem : ISystem
     {
