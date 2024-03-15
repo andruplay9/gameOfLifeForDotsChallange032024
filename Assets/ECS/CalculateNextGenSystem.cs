@@ -104,6 +104,7 @@ namespace GameOfLife.ECS
                 hashMapUpRight[index.index] = rightUpBorderOfChunk.Value;
             }
         }
+        [BurstCompile]
         private partial struct CalculateNextGeneretionForChunkJob :IJobEntity
         {
             [ReadOnly] public NativeArray<int>.ReadOnly hashMapUp;
@@ -181,31 +182,38 @@ namespace GameOfLife.ECS
                 ulong chunkOneDownLeft = (chunkOneLeft << 8) + (uprightBoardOfUpLeftNeighboor); 
                 ulong chunkOneDownRight = (chunkOneRight << 8) + (upleftBoardOfDownRightNeighboor);
                  
-                var (test0neighbors1, test1neighbors1, test3Neighbors1, test2neighbors1) =
-                    GetTestIn4(chunkOneUp, chunkOneDown, chunkOneLeft, chunkOneRight);
-                var (test0neighbors2, test1neighbors2, test3Neighbors2, test2neighbors2) =
-                    GetTestIn4(chunkOneUpLeft, chunkOneUpRight, chunkOneDownLeft, chunkOneDownRight);
+                TestResults test1=new TestResults(0,0,0,0);
+                GetTestIn4(chunkOneUp, chunkOneDown, chunkOneLeft, chunkOneRight, ref test1);
+                TestResults test2=new TestResults(0,0,0,0);
+                GetTestIn4(chunkOneUpLeft, chunkOneUpRight, chunkOneDownLeft, chunkOneDownRight, ref test2);
 
-     
-
-                var test3Neighbors = (test1neighbors1 & test2neighbors2) | (test1neighbors2 & test2neighbors1) |
-                                     (test0neighbors1 & test3Neighbors2) | (test0neighbors2 & test3Neighbors1);
+                var test3Neighbors = (test1.Test1Neighbors & test2.Test2Neighbors) | (test2.Test1Neighbors & test1.Test2Neighbors) |
+                                     (test1.Test0Neighbors & test2.Test3Neighbors) | (test2.Test0Neighbors & test1.Test3Neighbors);
                 var test2Neighbors =
-                    ((test1neighbors1 & test1neighbors2) | (test0neighbors1 & test2neighbors2) |
-                     (test0neighbors2 & test2neighbors1)) & chunk.Value;
-                /*if (index.index == 0)
-                {
-                    Debug.Log(index.index+"\n"+TestLogic.SpliceText(chunkOneDown)+"  \n"+TestLogic.SpliceText(chunkOneUp));
-                    Debug.Log(index.index+"\n"+TestLogic.SpliceText(chunkOneLeft)+"  \n"+TestLogic.SpliceText(chunkOneRight));
-                    Debug.Log(index.index+"\n"+TestLogic.SpliceText(chunkOneUpLeft)+"  \n"+TestLogic.SpliceText(chunkOneUpRight));
-                    Debug.Log(index.index+"\n"+TestLogic.SpliceText(chunkOneDownLeft)+"  \n"+TestLogic.SpliceText(chunkOneDownRight));
-                }*/
+                    ((test1.Test1Neighbors & test2.Test1Neighbors) | (test1.Test0Neighbors & test2.Test2Neighbors) |
+                     (test2.Test0Neighbors & test1.Test2Neighbors)) & chunk.Value;
                 chunk.Value = test2Neighbors | test3Neighbors;
 
             }
+            
+            private struct TestResults
+            {
+                public readonly ulong Test0Neighbors;
+                public readonly ulong Test1Neighbors;
+                public readonly ulong Test3Neighbors;
+                public readonly ulong Test2Neighbors;
+
+                public TestResults(ulong test0Neighbors, ulong test1Neighbors, ulong test3Neighbors, ulong test2Neighbors)
+                {
+                    Test0Neighbors = test0Neighbors;
+                    Test1Neighbors = test1Neighbors;
+                    Test3Neighbors = test3Neighbors;
+                    Test2Neighbors = test2Neighbors;
+                }
+                
+            }
             [BurstCompile]
-            private static (ulong test0neighbors, ulong test1neighbors, ulong test3Neighbors, ulong test2neighbors) 
-                GetTestIn4(ulong chunkOneUp, ulong chunkOneDown, ulong chunkOneLeft, ulong chunkOneRight)
+            private static void GetTestIn4(ulong chunkOneUp, ulong chunkOneDown, ulong chunkOneLeft, ulong chunkOneRight, ref TestResults test)
             {
                 ulong upDown = chunkOneUp & chunkOneDown;
                 ulong leftRight = chunkOneLeft & chunkOneRight;
@@ -221,7 +229,7 @@ namespace GameOfLife.ECS
                 ulong test3Neighbors = leftRight & downOrUp | upDown & leftOrRight;
                 ulong test4neighbors = leftUp & rightDown;
                 ulong test2neighbors = ~(test0neighbors | test1neighbors | test3Neighbors | test4neighbors);
-                return (test0neighbors, test1neighbors, test3Neighbors, test2neighbors);
+                test = new TestResults(test0neighbors, test1neighbors, test3Neighbors, test2neighbors);
             }
         }
     }

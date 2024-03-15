@@ -13,6 +13,7 @@ namespace GameOfLife.ECS.Render
 {
     [UpdateInGroup(typeof(GameOfLifeSystemGroupSystem), OrderLast = true)]
     [UpdateAfter(typeof(GameOfLifeSimulationSystemGroupSystem))]
+    [BurstCompile]
     public partial class RenderBackgroundViewSystem : SystemBase
     {
         private EntityQuery _querry;
