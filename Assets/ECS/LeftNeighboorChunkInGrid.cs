@@ -18,4 +18,20 @@ namespace GameOfLife.ECS
     {
         public int Value;
     }
+    public struct DownLeftNeighboorChunkInGrid : IComponentData
+    {
+        public int Value;
+    }
+    public struct DownRightNeighboorChunkInGrid : IComponentData
+    {
+        public int Value;
+    }
+    public struct UpLeftNeighboorChunkInGrid : IComponentData
+    {
+        public int Value;
+    }
+    public struct UpRightNeighboorChunkInGrid : IComponentData
+    {
+        public int Value;
+    }
 }

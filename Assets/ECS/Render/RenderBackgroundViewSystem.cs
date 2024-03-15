@@ -17,8 +17,8 @@ namespace GameOfLife.ECS.Render
     {
         private EntityQuery _querry;
         private static readonly Quaternion rot = new Quaternion(0.707106829f, 0, 0, 0.707106829f);
-        private static float4 colorA = new float4(0, 1, 0, 1);
-        private static float4 colorB = new float4(1, 0, 0, 1);
+        private static readonly float4 colorA = new float4(0, 1, 0, 1);
+        private static readonly float4 colorB = new float4(1, 0, 0, 1);
 
         protected override void OnCreate()
         {
@@ -110,7 +110,10 @@ namespace GameOfLife.ECS.Render
                 PackedMatrix reverseMatrix;
                 index = index * 64;
                 float3 pos;
-                var byteArray=BitConverter.GetBytes(gridData.Value);
+                NativeBitArray bitArray =
+                    new NativeBitArray(64, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                bitArray.SetBits(0, gridData.Value, 64);
+
                 for (int j = 0; j < 64; j++)
                 {
                     pos=float3.zero;
@@ -135,11 +138,12 @@ namespace GameOfLife.ECS.Render
                     sysmemBuffer[(windowOffsetInFloat4 + maxInstancePerWindow * 3 * 1 + i * 3 + 0)] = new float4(matrix.c0x,matrix.c0y,matrix.c0z,matrix.c1x);
                     sysmemBuffer[(windowOffsetInFloat4 + maxInstancePerWindow * 3 * 1 + i * 3 + 1)] = new float4(matrix.c1y,matrix.c1z,matrix.c2x,matrix.c2y);
                     sysmemBuffer[(windowOffsetInFloat4 + maxInstancePerWindow * 3 * 1 + i * 3 + 2)] = new float4(matrix.c2z,matrix.c3x,matrix.c3y,matrix.c3z);
-                    sysmemBuffer[windowOffsetInFloat4 + maxInstancePerWindow * 3 * 2 + i] =IsBitSet(byteArray[j/8],j%8)?colorA:colorB;
+                    sysmemBuffer[windowOffsetInFloat4 + maxInstancePerWindow * 3 * 2 + i] =bitArray.IsSet(j)?colorA:colorB;
                 }
 
 
             }
+            [BurstCompile]
             private static bool IsBitSet(byte b, int pos)
             {
                 return (b & (1 << pos)) != 0;

@@ -41,10 +41,18 @@ namespace GameOfLife.ECS.IOSystems
                 ComponentType.ReadWrite<LeftBorderOfChunk>(),
                 ComponentType.ReadWrite<UpBorderOfChunk>(),
                 ComponentType.ReadWrite<DownBorderOfChunk>(),
+                ComponentType.ReadWrite<LeftDownBorderOfChunk>(),
+                ComponentType.ReadWrite<RightUpBorderOfChunk>(),
+                ComponentType.ReadWrite<LeftUpBorderOfChunk>(),
+                ComponentType.ReadWrite<RightDownBorderOfChunk>(),
                 ComponentType.ReadWrite<LeftNeighboorChunkInGrid>(),
                 ComponentType.ReadWrite<RightNeighboorChunkInGrid>(),
                 ComponentType.ReadWrite<UpNeighboorChunkInGrid>(),
                 ComponentType.ReadWrite<DownNeighboorChunkInGrid>(),
+                ComponentType.ReadWrite<DownLeftNeighboorChunkInGrid>(),
+                ComponentType.ReadWrite<DownRightNeighboorChunkInGrid>(),
+                ComponentType.ReadWrite<UpLeftNeighboorChunkInGrid>(),
+                ComponentType.ReadWrite<UpRightNeighboorChunkInGrid>(),
             });
             EntityManager.CreateEntity(archetype, counter);
             Dependency = new SetGridIndexForNewOnes()
