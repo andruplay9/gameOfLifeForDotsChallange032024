@@ -10,6 +10,8 @@ namespace GameOfLife.ECS.IOSystems
 {
     [UpdateInGroup(typeof(GameOfLifeCrationAndIOSystemGroupSystem))]
     [UpdateAfter(typeof(LoadBaseGridGivenSizeSystem))]
+    [UpdateAfter(typeof(LoadFromDataGridGivenSizeSystem))]
+
     public partial struct CalculateConnectionsBetweenChunksSystems : ISystem
     {
         private EntityQuery _querry;

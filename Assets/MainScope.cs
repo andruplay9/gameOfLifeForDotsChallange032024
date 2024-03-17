@@ -19,6 +19,7 @@ namespace GameOfLife
             var options = builder.RegisterMessagePipe(/* configure option */);
             builder.RegisterMessageBroker<SendEventSimulationIsRunningSystem.SimulationRunEvent>(options);
             builder.RegisterMessageBroker<SendEventSimulationGridSizeChangeSystem.GridSizeChangeEvent>(options);
+            builder.RegisterMessageBroker<LoadFromDataGridGivenSizeSystem.GridFullData>(options);
 
             builder.RegisterSystemFromDefaultWorld<RenderBackgroundViewSystem>();
             builder.RegisterSystemFromDefaultWorld<FixedStepSimulationSystemGroup>();
@@ -27,6 +28,9 @@ namespace GameOfLife
             builder.RegisterSystemFromDefaultWorld<SendEventSimulationIsRunningSystem>();
             builder.RegisterSystemFromDefaultWorld<SendEventSimulationGridSizeChangeSystem>();
             builder.RegisterSystemFromDefaultWorld<RunSimulationOnceSystem>();
+            builder.RegisterSystemFromDefaultWorld<SavemDataGridSystem>();
+            builder.RegisterSystemFromDefaultWorld<LoadFromDataGridGivenSizeSystem>();
+
 
 
         }

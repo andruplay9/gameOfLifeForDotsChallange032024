@@ -20,6 +20,14 @@ namespace GameOfLife.ECS.Render
         private static readonly Quaternion rot = new Quaternion(0.707106829f, 0, 0, 0.707106829f);
         private static readonly float4 colorA = new float4(0, 1, 0, 1);
         private static readonly float4 colorB = new float4(1, 0, 0, 1);
+        private int _frameToSkip=0;
+        private int _frameSkippedCounter=0;
+
+        public void UpdateFrameSkipper(int newValue)
+        {
+            _frameSkippedCounter = 0;
+            _frameToSkip = newValue;
+        }
 
         protected override void OnCreate()
         {
@@ -33,6 +41,9 @@ namespace GameOfLife.ECS.Render
         }
         protected override void OnUpdate()
         {
+            _frameSkippedCounter++;
+            if(_frameSkippedCounter<=_frameToSkip)return;
+            _frameSkippedCounter = 0;
             var dataEntity = SystemAPI.GetSingleton<GridSizeSingleton>();
             var component = SystemAPI.ManagedAPI.GetSingleton<TileMaterialAndMeshComponent>();
             var brgContainer = SystemAPI.ManagedAPI.GetSingleton<BRG_ContainerComponent>().Value;
