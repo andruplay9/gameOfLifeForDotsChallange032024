@@ -15,3 +15,5 @@ This is image of how compare 4 inputs and get if 0/1/3/4 are active, then you ea
 30 frames witch skipping every 8 frames get 130x 130 chunks (it 1040x1040 - 1081600)
 ![image](https://github.com/andruplay9/gameOfLifeForDotsChallange032024/assets/57016413/4b92ca9a-a738-43d7-9f4d-9f74045eb672)
 
+P.S App use Vcontainer + MessagePipe for comunication between ui-ecs, not affect simulation in any way
+
