@@ -3,6 +3,7 @@ My optimalizations:
   - one entity == one chunk of cells (8 by 8) stored in single ulong
   - no storage of future/past chunk version (only borders)
   - custom render (sadly witchout custom shaders - would be much faster)
+    based on: https://github.com/Unity-Technologies/brg-shooter
   - calculate all cells in chunk at once using bit operations (practically no if statements in simulation logic or forloop for each cell)
   - option to slow/skip frame rendering (render every 4 frame etc)
 
